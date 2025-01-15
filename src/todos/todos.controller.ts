@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { TodosService } from './todos.service';
-import { Todo } from './todos.model';
+import { Todo } from './todo.entity';
 import { CreateTodoDto } from './create-todo.dto';
 
 @Controller('todos')
@@ -8,17 +8,18 @@ export class TodosController {
     constructor(private readonly todoService: TodosService) {};
 
     @Post()
-    create(@Body() createTodoDto: CreateTodoDto): Todo {
-        return this.todoService.create(createTodoDto);
+    async create(@Body() createTodoDto: CreateTodoDto): Promise<Todo> {
+        return await this.todoService.create(createTodoDto);
     }
 
     @Get()
-    findAll(): Todo[] {
+    findAll(): Promise<Todo[]> {
         return this.todoService.findAll();
     } 
 
     @Get(':id')
-    findOne(@Param('id') id: string): Todo {
+    findOne(@Param('id') id: string): Promise<Todo> {
+        console.log(`Calling service to find Todo with ID: ${id}`);
         return this.todoService.findOne(id);
     }
 
@@ -26,12 +27,12 @@ export class TodosController {
     update(
         @Param('id') id: string,
         @Body() updatedTodo: Todo
-    ): Todo {
+    ): Promise<Todo> {
         return this.todoService.update(id, updatedTodo);
     }
     
     @Delete(':id')
-    remove(@Param('id') id: string): void {
+    remove(@Param('id') id: string): Promise<void> {
         return this.todoService.remove(id);
     }
 }

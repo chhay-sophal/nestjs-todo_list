@@ -1,39 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { Todo } from './todos.model';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTodoDto } from './create-todo.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Todo } from './todo.entity';
 
 @Injectable()
 export class TodosService {
-    private todos: Todo[] =[];
+    constructor(
+        @InjectRepository(Todo)
+        private todoRepository: Repository<Todo>,
+    ) {}
 
-    create(createTodoDto: CreateTodoDto): Todo {
-        const newTodo: Todo = {
-            id: uuidv4(),
-            ...createTodoDto,
+    async create(createTodoDto: CreateTodoDto): Promise<Todo> {
+        const newTodo = this.todoRepository.create(createTodoDto);
+        return await this.todoRepository.save(newTodo);
+    }
+
+    async findAll(): Promise<Todo[]> {
+        return await this.todoRepository.find();
+    }
+
+    async findOne(id: string): Promise<Todo> {
+        try {
+          const todo = await this.todoRepository.findOneOrFail({ where: { id } });
+          return todo;
+        } catch (error) {
+          throw new NotFoundException(`Todo with ID ${id} not found`);
         }
-        this.todos.push(newTodo);
-        return newTodo;
+      }      
+
+    async update(id: string, updatedTodo: Todo): Promise<Todo> {
+        await this.todoRepository.update(id, updatedTodo);
+        return this.todoRepository.findOneOrFail({ where: { id } });
     }
 
-    findAll(): Todo[] {
-        return this.todos;
-    }
-
-    findOne(id: string): Todo {
-        return this.todos.find(todo => todo.id === id);
-    }
-
-    update(id: string, updatedTodo: Todo): Todo {
-        const todoIndex = this.todos.findIndex(todo => todo.id === id);
-        if (todoIndex === -1) {
-            return null;
-        }
-        this.todos[todoIndex] = updatedTodo;
-        return updatedTodo;
-    }
-
-    remove(id: string): void {
-        this.todos = this.todos.filter(todo => todo.id !== id);
+    async remove(id: string): Promise<void> {
+        await this.todoRepository.delete(id);
     }
 }
