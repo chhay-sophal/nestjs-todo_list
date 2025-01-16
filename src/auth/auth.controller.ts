@@ -1,26 +1,22 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from './auth.guard';
-
-class SignInDto {
-    username: string;
-    password: string;
-  }
+import { LocalAuthGuard } from './local-auth.guard';
+import { Public } from './public.decorator';
 
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
 
-    @HttpCode(HttpStatus.OK)
+    @Public()
+    @UseGuards(LocalAuthGuard)
     @Post('login')
-    signIn(@Body() signInDto: SignInDto) {
-        return this.authService.signIn(signInDto.username, signInDto.password)
+    async login(@Request() req) {
+      return this.authService.login(req.user);
     }
-
-    @UseGuards(AuthGuard)
-    @Get('profile')
-    getProfile(@Request() req) {
-        return req.user;
+    
+    @Post('logout')
+    async logout(@Request() req) {
+      return req.logout();
     }
 }
 
@@ -36,3 +32,4 @@ export class AuthController {
 // $ # GET /profile using access_token returned from previous step as bearer code
 // $ curl http://localhost:3000/auth/profile -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2Vybm..."
 // {"sub":1,"username":"phal","iat":...,"exp":...}
+// curl http://localhost:3000/profile -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBoYWwiLCJzdWIiOjEsImlhdCI6MTczNzAxNzI3NSwiZXhwIjoxNzM3MDE3MzM1fQ.bxZPW22i6hTRPArozalpwP6_gAuZtRW8EyfsOoLiC3s"
